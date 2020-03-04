@@ -180,7 +180,7 @@ mod tests {
     fn ref_to() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        let debug: Option<&dyn Debug> = st.ref_to();
+        let debug = st.ref_to::<dyn Debug>();
         assert!(debug.is_some());
     }
 
@@ -188,7 +188,7 @@ mod tests {
     fn mut_to() {
         let mut ts = TestStruct;
         let st: &mut dyn SourceTrait = &mut ts;
-        let debug: Option<&mut dyn Debug> = st.mut_to();
+        let debug = st.mut_to::<dyn Debug>();
         assert!(debug.is_some());
     }
 
@@ -196,7 +196,7 @@ mod tests {
     fn box_to() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        let debug: Option<Box<dyn Debug>> = st.box_to();
+        let debug = st.box_to::<dyn Debug>();
         assert!(debug.is_some());
     }
 
@@ -204,31 +204,31 @@ mod tests {
     fn ref_to_wrong() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        let debug: Option<&dyn Display> = st.ref_to();
-        assert!(debug.is_none());
+        let display = st.ref_to::<dyn Display>();
+        assert!(display.is_none());
     }
 
     #[test]
     fn mut_to_wrong() {
         let mut ts = TestStruct;
         let st: &mut dyn SourceTrait = &mut ts;
-        let debug: Option<&mut dyn Display> = st.mut_to();
-        assert!(debug.is_none());
+        let display = st.mut_to::<dyn Display>();
+        assert!(display.is_none());
     }
 
     #[test]
     fn box_to_wrong() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        let debug: Option<Box<dyn Display>> = st.box_to();
-        assert!(debug.is_none());
+        let display = st.box_to::<dyn Display>();
+        assert!(display.is_none());
     }
 
     #[test]
     fn ref_to_from_any() {
         let ts = TestStruct;
         let st: &dyn Any = &ts;
-        let debug: Option<&dyn Debug> = st.ref_to();
+        let debug = st.ref_to::<dyn Debug>();
         assert!(debug.is_some());
     }
 
@@ -236,7 +236,7 @@ mod tests {
     fn mut_to_from_any() {
         let mut ts = TestStruct;
         let st: &mut dyn Any = &mut ts;
-        let debug: Option<&mut dyn Debug> = st.mut_to();
+        let debug = st.mut_to::<dyn Debug>();
         assert!(debug.is_some());
     }
 
@@ -244,7 +244,7 @@ mod tests {
     fn box_to_from_any() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn Any> = ts;
-        let debug: Option<Box<dyn Debug>> = st.box_to();
+        let debug = st.box_to::<dyn Debug>();
         assert!(debug.is_some());
     }
 

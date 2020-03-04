@@ -102,41 +102,41 @@ impl CastFrom for dyn Any {
 
 /// A trait that is blanket-implemented for traits extending `Any` to allow for casting
 /// to another trait.
-pub trait CastTo<T: ?Sized + 'static> {
+pub trait CastTo {
     /// Casts a reference to this trait into that of type `T`.
-    fn ref_to(&self) -> Option<&T>;
+    fn ref_to<T: ?Sized + 'static>(&self) -> Option<&T>;
 
     /// Casts a mutable reference to this trait into that of type `T`.
-    fn mut_to(&mut self) -> Option<&mut T>;
+    fn mut_to<T: ?Sized + 'static>(&mut self) -> Option<&mut T>;
 
     /// Casts a box to this trait into that of type `T`.
-    fn box_to(self: Box<Self>) -> Option<Box<T>>;
+    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Option<Box<T>>;
 
     /// Tests if this trait object can be cast into `T`.
-    fn ok(&self) -> bool;
+    fn ok<T: ?Sized + 'static>(&self) -> bool;
 }
 
 /// A blanket implementation of `CastTo` for traits extending `CastFrom`.
-impl<S: ?Sized + CastFrom, T: ?Sized + 'static> CastTo<T> for S {
-    fn ref_to(&self) -> Option<&T> {
+impl<S: ?Sized + CastFrom> CastTo for S {
+    fn ref_to<T: ?Sized + 'static>(&self) -> Option<&T> {
         let any = self.ref_any();
         let caster = caster::<T>(any.type_id())?;
         (caster.cast_ref)(any)
     }
 
-    fn mut_to(&mut self) -> Option<&mut T> {
+    fn mut_to<T: ?Sized + 'static>(&mut self) -> Option<&mut T> {
         let any = self.mut_any();
         let caster = caster::<T>((*any).type_id())?;
         (caster.cast_mut)(any)
     }
 
-    fn box_to(self: Box<Self>) -> Option<Box<T>> {
+    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Option<Box<T>> {
         let any = self.box_any();
         let caster = caster::<T>((*any).type_id())?;
         (caster.cast_box)(any).map(|b| b as Box<T>).ok()
     }
 
-    fn ok(&self) -> bool {
+    fn ok<T: ?Sized + 'static>(&self) -> bool {
         CASTER_MAP.contains_key(&(self.ref_any().type_id(), TypeId::of::<Caster<T>>()))
     }
 }
@@ -252,41 +252,41 @@ mod tests {
     fn ok_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        assert!(CastTo::<dyn Debug>::ok(st));
+        assert!(st.ok::<dyn Debug>());
     }
 
     #[test]
     fn ok_mut() {
         let mut ts = TestStruct;
         let st: &mut dyn SourceTrait = &mut ts;
-        assert!(CastTo::<dyn Debug>::ok(st));
+        assert!((*st).ok::<dyn Debug>());
     }
 
     #[test]
     fn ok_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        assert!(CastTo::<dyn Debug>::ok(&*st));
+        assert!((*st).ok::<dyn Debug>());
     }
 
     #[test]
     fn not_ok_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        assert!(!CastTo::<dyn Display>::ok(st));
+        assert!(!st.ok::<dyn Display>());
     }
 
     #[test]
     fn not_ok_mut() {
         let mut ts = TestStruct;
         let st: &mut dyn Any = &mut ts;
-        assert!(!CastTo::<dyn Display>::ok(st));
+        assert!(!(*st).ok::<dyn Display>());
     }
 
     #[test]
     fn not_ok_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        assert!(!CastTo::<dyn Display>::ok(&*st));
+        assert!(!st.ok::<dyn Display>());
     }
 }

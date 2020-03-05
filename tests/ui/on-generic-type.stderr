@@ -1,0 +1,5 @@
+error: #[cast_to(..)] can't be used on a generic type definition
+ --> $DIR/on-generic-type.rs:5:12
+  |
+5 | struct Data<T: 'static> {
+  |            ^

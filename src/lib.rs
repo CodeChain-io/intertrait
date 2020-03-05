@@ -4,9 +4,14 @@ use std::collections::HashMap;
 use linkme::distributed_slice;
 use once_cell::sync::Lazy;
 
+pub use intertrait_macros::*;
+
 use crate::hasher::BuildFastHasher;
 
 mod hasher;
+
+pub type BoxedCaster = Box<dyn Any + Send + Sync>;
+pub type CastBoxResult<T> = Result<Box<T>, Box<dyn Any>>;
 
 /// A distributed slice gathering constructor functions for [`Caster<T>`]s.
 ///
@@ -15,12 +20,12 @@ mod hasher;
 ///
 /// [`Caster<T>`]: ./struct.Caster.html
 #[distributed_slice]
-pub static CASTERS: [fn() -> (TypeId, Box<dyn Any + Send + Sync>)] = [..];
+pub static CASTERS: [fn() -> (TypeId, BoxedCaster)] = [..];
 
 /// A `HashMap` mapping `TypeId` of a [`Caster<S, T>`] to an instance of it.
 ///
 /// [`Caster<S, T>`]: ./struct.Caster.html
-static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), Box<dyn Any + Send + Sync>, BuildFastHasher>> =
+static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), BoxedCaster, BuildFastHasher>> =
     Lazy::new(|| {
         CASTERS
             .iter()
@@ -41,15 +46,15 @@ static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), Box<dyn Any + Send + Sync>, Bu
 pub struct Caster<T: ?Sized + 'static> {
     /// Casts a reference to a trait object of type `Any` from a concrete type `S`
     /// to a reference to a trait object of type `T`.
-    cast_ref: fn(from: &dyn Any) -> Option<&T>,
+    pub cast_ref: fn(from: &dyn Any) -> Option<&T>,
 
     /// Casts a mutable reference to a trait object of type `Any` from a concrete type `S`
     /// to a mutable reference to a trait object of type `T`.
-    cast_mut: fn(from: &mut dyn Any) -> Option<&mut T>,
+    pub cast_mut: fn(from: &mut dyn Any) -> Option<&mut T>,
 
     /// Casts a `Box` holding a trait object of type `Any` from a concrete type `S`
     /// to another `Box` holding a trait object of type `T`.
-    cast_box: fn(from: Box<dyn Any>) -> Result<Box<T>, Box<dyn Any>>,
+    pub cast_box: fn(from: Box<dyn Any>) -> CastBoxResult<T>,
 }
 
 /// Returns a `Caster<S, T>` from a concrete type `S` to a trait `T` implemented by it.
@@ -148,13 +153,13 @@ mod tests {
 
     use linkme::distributed_slice;
 
-    use crate::CastFrom;
+    use crate::{BoxedCaster, CastFrom};
 
     use super::CastTo;
     use super::Caster;
 
     #[distributed_slice(super::CASTERS)]
-    static TEST_CASTER: fn() -> (TypeId, Box<dyn Any + Send + Sync>) = create_test_caster;
+    static TEST_CASTER: fn() -> (TypeId, BoxedCaster) = create_test_caster;
 
     #[derive(Debug)]
     struct TestStruct;
@@ -163,7 +168,7 @@ mod tests {
 
     impl SourceTrait for TestStruct {}
 
-    fn create_test_caster() -> (TypeId, Box<dyn Any + Send + Sync>) {
+    fn create_test_caster() -> (TypeId, BoxedCaster) {
         let type_id = TypeId::of::<TestStruct>();
         let caster = Box::new(Caster::<dyn Debug> {
             cast_ref: |from| from.downcast_ref::<TestStruct>().map(|c| c as &dyn Debug),

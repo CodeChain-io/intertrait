@@ -113,7 +113,7 @@ pub trait CastTo {
     fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Option<Box<T>>;
 
     /// Tests if this trait object can be cast into `T`.
-    fn ok<T: ?Sized + 'static>(&self) -> bool;
+    fn impls<T: ?Sized + 'static>(&self) -> bool;
 }
 
 /// A blanket implementation of `CastTo` for traits extending `CastFrom`.
@@ -136,7 +136,7 @@ impl<S: ?Sized + CastFrom> CastTo for S {
         (caster.cast_box)(any).map(|b| b as Box<T>).ok()
     }
 
-    fn ok<T: ?Sized + 'static>(&self) -> bool {
+    fn impls<T: ?Sized + 'static>(&self) -> bool {
         CASTER_MAP.contains_key(&(self.ref_any().type_id(), TypeId::of::<Caster<T>>()))
     }
 }
@@ -252,41 +252,41 @@ mod tests {
     fn ok_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        assert!(st.ok::<dyn Debug>());
+        assert!(st.impls::<dyn Debug>());
     }
 
     #[test]
     fn ok_mut() {
         let mut ts = TestStruct;
         let st: &mut dyn SourceTrait = &mut ts;
-        assert!((*st).ok::<dyn Debug>());
+        assert!((*st).impls::<dyn Debug>());
     }
 
     #[test]
     fn ok_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        assert!((*st).ok::<dyn Debug>());
+        assert!((*st).impls::<dyn Debug>());
     }
 
     #[test]
     fn not_ok_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        assert!(!st.ok::<dyn Display>());
+        assert!(!st.impls::<dyn Display>());
     }
 
     #[test]
     fn not_ok_mut() {
         let mut ts = TestStruct;
         let st: &mut dyn Any = &mut ts;
-        assert!(!(*st).ok::<dyn Display>());
+        assert!(!(*st).impls::<dyn Display>());
     }
 
     #[test]
     fn not_ok_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        assert!(!st.ok::<dyn Display>());
+        assert!(!st.impls::<dyn Display>());
     }
 }

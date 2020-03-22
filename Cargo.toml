@@ -7,6 +7,8 @@ description = "Allow for inter-trait casting"
 edition = "2018"
 repository = "https://github.com/CodeChain-io/intertrait"
 readme = "README.md"
+categories = ["rust-patterns"]
+keywords = ["trait", "cast", "any"]
 
 [dependencies]
 once_cell = "1.3.1"

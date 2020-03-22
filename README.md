@@ -11,7 +11,7 @@ In Rust, an object of a sub-trait of [`std::any::Any`] can be downcast to a conc
 With this crate, any trait object with [`CastFrom`] as its super-trait can be cast directly to another trait object implemented by the underlying type if the target traits are registered beforehand with the macros provided by this crate.
 
 # Usage
-```
+```rust
 use intertrait::*;
 
 struct Data;
@@ -44,7 +44,7 @@ Target traits must be explicitly designated beforehand. There are three ways to 
 ## `#[cast_to]` to `impl` item
 The trait implemented is designated as a target trait.
 
-```
+```rust
 # use intertrait::*;
 # struct Data;
 # trait Greet { fn greet(&self); }
@@ -59,7 +59,7 @@ impl Greet for Data {
 ## `#[cast_to(Trait)]` to type definition
 For the type, the traits specified as arguments to the `#[cast_to(...)]` attribute are designated as target traits.
 
-```
+```rust
 # use intertrait::*;
 # trait Greet { fn greet(&self); }
 # impl Greet for Data {
@@ -75,7 +75,7 @@ struct Data;
 ## `castable_to!(Type: Trait1, Trait2)`
 For the type, the traits following `:` are designated as target traits.
 
-```
+```rust
 # use intertrait::*;
 # #[derive(std::fmt::Debug)]
 # struct Data;

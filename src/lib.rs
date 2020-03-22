@@ -1,3 +1,57 @@
+//! A library providing direct casting among trait objects implemented by a type.
+//!
+//! In Rust, an object of a sub-trait of [`std::any::Any`] can be downcast to a concrete type
+//! at runtime if the type is known. But no direct casting between two trait objects
+//! (i.e. without involving the concrete type of the backing value) are possible
+//! (even no coercion from a trait object to that of its super-trait yet).
+//!
+//! With this crate, any trait object with [`CastFrom`] as its super-trait can be cast directly
+//! to another trait object implemented by the underlying type if the target traits are
+//! registered beforehand with the macros provided by this crate.
+//!
+//! # Usage
+//! ```
+//! use intertrait::*;
+//!
+//! struct Data;
+//!
+//! trait Source: CastFrom {}
+//!
+//! trait Greet {
+//!     fn greet(&self);
+//! }
+//!
+//! #[cast_to]
+//! impl Greet for Data {
+//!     fn greet(&self) {
+//!         println!("Hello");
+//!     }
+//! }
+//!
+//! impl Source for Data {}
+//!
+//! fn main() {
+//!     let data = Data;
+//!     let source: &dyn Source = &data;
+//!     let greet = source.ref_to::<dyn Greet>();
+//!     greet.unwrap().greet();
+//! }
+//! ```
+//!
+//! Target traits must be explicitly designated beforehand. There are three ways to do it:
+//!
+//! * [`#[cast_to]`][cast_to] to `impl` item
+//! * [`#[cast_to(Trait)]`][cast_to] to type definition
+//! * [`castable_to!(Type: Trait1, Trait2)`][castable_to]
+//!
+//! Refer to the documents for each of macros for details.
+//!
+//! For casting, refer to [`CastTo`].
+//!
+//! [cast_to]: ./attr.cast_to.html
+//! [castable_to]: ./macro.castable_to.html
+//! [`CastTo`]: ./trait.CastTo.html
+//! [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
@@ -10,7 +64,9 @@ use crate::hasher::BuildFastHasher;
 
 mod hasher;
 
+#[doc(hidden)]
 pub type BoxedCaster = Box<dyn Any + Send + Sync>;
+#[doc(hidden)]
 pub type CastBoxResult<T> = Result<Box<T>, Box<dyn Any>>;
 
 #[cfg(doctest)]
@@ -22,6 +78,7 @@ doc_comment::doctest!("../README.md");
 /// and a `Box` of a trait object backed by a [`Caster<T>`].
 ///
 /// [`Caster<T>`]: ./struct.Caster.html
+#[doc(hidden)]
 #[distributed_slice]
 pub static CASTERS: [fn() -> (TypeId, BoxedCaster)] = [..];
 
@@ -67,8 +124,23 @@ fn caster<T: ?Sized + 'static>(type_id: TypeId) -> Option<&'static Caster<T>> {
         .and_then(|caster| caster.downcast_ref::<Caster<T>>())
 }
 
-/// `CastFrom` is extended by a trait if the trait wants to allow for casting
-/// into another trait.
+/// `CastFrom` must be extended by a trait that wants to allow for casting into another trait.
+///
+/// It is used for obtaining an object of [`Any`] from an object of a sub-trait of `CastFrom`,
+/// and blanket implemented for all `Sized + 'static` types.
+///
+/// # Examples
+/// ```ignore
+/// trait Source: CastFrom {
+///     ...
+/// }
+/// ```
+///
+/// **Note**: [`CastFrom`] will become obsolete and be replaced with [`std::any::Any`]
+/// once the [unsized coercion](https://doc.rust-lang.org/reference/type-coercions.html#unsized-coercions)
+/// from a trait object to an object of its super-trait is implemented in the stable Rust.
+///
+/// [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
 pub trait CastFrom {
     /// Returns a immutable reference to `Any`, which is backed by the type implementing this trait.
     fn ref_any(&self) -> &dyn Any;
@@ -110,6 +182,90 @@ impl CastFrom for dyn Any {
 
 /// A trait that is blanket-implemented for traits extending `Any` to allow for casting
 /// to another trait.
+///
+/// # Examples
+/// ## Casting an immutable reference
+///
+/// ```
+/// # use intertrait::*;
+/// # #[cast_to(Greet)]
+/// # struct Data;
+/// # trait Source: CastFrom {}
+/// # trait Greet {
+/// #     fn greet(&self);
+/// # }
+/// # impl Greet for Data {
+/// #    fn greet(&self) {
+/// #        println!("Hello");
+/// #    }
+/// # }
+/// impl Source for Data {}
+/// let data = Data;
+/// let source: &dyn Source = &data;
+/// let greet = source.ref_to::<dyn Greet>();
+/// greet.unwrap().greet();
+/// ```
+/// ## Casting a mutable reference.
+/// ```
+/// # use intertrait::*;
+/// # #[cast_to(Greet)]
+/// # struct Data;
+/// # trait Source: CastFrom {}
+/// # trait Greet {
+/// #     fn greet(&self);
+/// # }
+/// # impl Greet for Data {
+/// #    fn greet(&self) {
+/// #        println!("Hello");
+/// #    }
+/// # }
+/// impl Source for Data {}
+/// let mut data = Data;
+/// let source: &mut dyn Source = &mut data;
+/// let greet = source.mut_to::<dyn Greet>();
+/// greet.unwrap().greet();
+/// ```
+///
+/// ## Casting a Box.
+/// ```
+/// # use intertrait::*;
+/// # #[cast_to(Greet)]
+/// # struct Data;
+/// # trait Source: CastFrom {}
+/// # trait Greet {
+/// #     fn greet(&self);
+/// # }
+/// # impl Greet for Data {
+/// #    fn greet(&self) {
+/// #        println!("Hello");
+/// #    }
+/// # }
+/// impl Source for Data {}
+/// let data = Box::new(Data);
+/// let source: Box<dyn Source> = data;
+/// let greet = source.box_to::<dyn Greet>();
+/// greet.unwrap().greet();
+/// ```
+/// ## Testing if a cast is possible
+/// ```
+/// # use intertrait::*;
+/// # #[cast_to(Greet)]
+/// # struct Data;
+/// # trait Source: CastFrom {}
+/// # trait Greet {
+/// #     fn greet(&self);
+/// # }
+/// # impl Greet for Data {
+/// #    fn greet(&self) {
+/// #        println!("Hello");
+/// #    }
+/// # }
+/// impl Source for Data {}
+/// let data = Data;
+/// let source: &dyn Source = &data;
+/// assert!(source.impls::<dyn Greet>());
+/// assert!(!source.impls::<dyn std::fmt::Debug>());
+/// ```
 pub trait CastTo {
     /// Casts a reference to this trait into that of type `T`.
     fn ref_to<T: ?Sized + 'static>(&self) -> Option<&T>;

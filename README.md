@@ -40,6 +40,9 @@ Target traits must be explicitly designated beforehand. There are three ways to 
 The trait implemented is designated as a target trait.
 
 ```
+# use intertrait::*;
+# struct Data;
+# trait Greet { fn greet(&self); }
 #[cast_to]
 impl Greet for Data {
     fn greet(&self) {
@@ -52,7 +55,15 @@ impl Greet for Data {
 For the type, the traits specified as arguments to the `#[cast_to(...)]` attribute are designated as target traits.
 
 ```
-#[cast_to(Greet, Debug)]
+# use intertrait::*;
+# trait Greet { fn greet(&self); }
+# impl Greet for Data {
+#     fn greet(&self) {
+#         println!("Hello");
+#     }
+# }
+#[cast_to(Greet, std::fmt::Debug)]
+#[derive(std::fmt::Debug)]
 struct Data;
 ```
 
@@ -60,7 +71,19 @@ struct Data;
 For the type, the traits following `:` are designated as target traits.
 
 ```
-castable_to!(Data: Greet, Debug);
+# use intertrait::*;
+# #[derive(std::fmt::Debug)]
+# struct Data;
+# trait Greet { fn greet(&self); }
+# impl Greet for Data {
+#     fn greet(&self) {
+#         println!("Hello");
+#     }
+# }
+// Only in an item position due to the current limitation in the stable Rust.
+// https://github.com/rust-lang/rust/pull/68717
+castable_to!(Data: Greet, std::fmt::Debug);
+# fn main() {}
 ```
 
 # How it works

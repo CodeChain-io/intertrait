@@ -13,6 +13,9 @@ mod hasher;
 pub type BoxedCaster = Box<dyn Any + Send + Sync>;
 pub type CastBoxResult<T> = Result<Box<T>, Box<dyn Any>>;
 
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+
 /// A distributed slice gathering constructor functions for [`Caster<T>`]s.
 ///
 /// A constructor function returns `TypeId` of a concrete type involved in the casting

@@ -1,4 +1,9 @@
 # InterTrait
+
+![Build Status](https://github.com/CodeChain-io/intertrait/workflows/ci/badge.svg)
+[![Latest Version](https://img.shields.io/crates/v/intertrait.svg)](https://crates.io/crates/intertrait)
+[![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/intertrait)
+
 This library provides direct casting among trait objects implemented by a type.
 
 In Rust, an object of a sub-trait of [`std::any::Any`] can be downcast to a concrete type at runtime if the type is known. But no direct casting between two trait objects (i.e. without involving the concrete type of the backing value) are possible (even no coercion from a trait object to that of its super-trait yet).

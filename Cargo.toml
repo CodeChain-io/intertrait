@@ -9,6 +9,7 @@ repository = "https://github.com/CodeChain-io/intertrait"
 readme = "README.md"
 categories = ["rust-patterns"]
 keywords = ["trait", "cast", "any"]
+include = ["src/**/*", "Cargo.toml", "LICENSE-*", "README.md"]
 
 [dependencies]
 once_cell = "1.3.1"

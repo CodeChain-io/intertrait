@@ -1,4 +1,4 @@
-# InterTrait
+# Intertrait
 
 ![Build Status](https://github.com/CodeChain-io/intertrait/workflows/ci/badge.svg)
 [![Latest Version](https://img.shields.io/crates/v/intertrait.svg)](https://crates.io/crates/intertrait)
@@ -6,9 +6,13 @@
 
 This library provides direct casting among trait objects implemented by a type.
 
-In Rust, an object of a sub-trait of [`std::any::Any`] can be downcast to a concrete type at runtime if the type is known. But no direct casting between two trait objects (i.e. without involving the concrete type of the backing value) are possible (even no coercion from a trait object to that of its super-trait yet).
+In Rust, a trait object for a sub-trait of [`std::any::Any`] can be downcast to a concrete type at runtime
+if the type is known. But no direct casting between two trait objects (i.e. without involving the concrete type
+of the backing value) are possible (even no coercion from a trait object for a trait to that for its super-trait yet).
 
-With this crate, any trait object with [`CastFrom`] as its super-trait can be cast directly to another trait object implemented by the underlying type if the target traits are registered beforehand with the macros provided by this crate.
+With this crate, any trait object for a sub-trait of [`CastFrom`] can be cast directly to a trait object
+for another trait implemented by the underlying type if the target traits are registered beforehand
+with the macros provided by this crate.
 
 # Usage
 ```rust
@@ -39,7 +43,7 @@ fn main() {
 }
 ```
 
-Target traits must be explicitly designated beforehand. There are three ways to do it:
+Target traits must be explicitly designated beforehand. There are three ways of doing it:
 
 ## `#[cast_to]` to `impl` item
 The trait implemented is designated as a target trait.
@@ -92,18 +96,28 @@ fn main() {}
 ```
 
 # How it works
-First of all, [`CastFrom`] trait makes it possible to retrieve an object of [`std::any::Any`] from an object of a sub-trait of [`CastFrom`]. 
+First of all, [`CastFrom`] trait makes it possible to retrieve an object of [`std::any::Any`]
+from an object for a sub-trait of [`CastFrom`]. 
 
-> [`CastFrom`] will become obsolete and be replaced with [`std::any::Any`] once the [unsized coercion](https://doc.rust-lang.org/reference/type-coercions.html#unsized-coercions) from a trait object to an object of its super-trait is implemented in the stable Rust.
+> [`CastFrom`] will become obsolete and be replaced with [`std::any::Any`]
+> once [unsized coercion](https://doc.rust-lang.org/reference/type-coercions.html#unsized-coercions)
+> from a trait object to another trait object for its super-trait is implemented in the stable Rust.
 
-And the macros provided by `intertrait` generates trampoline functions for downcasting a trait object of [`std::any::Any`] back to its concrete type and then creating the target trait object from it.
+And the macros provided by `intertrait` generates trampoline functions for downcasting a trait object
+for [`std::any::Any`] back to its concrete type and then creating a trait object for the target trait from it.
 
-Those trampoline functions are aggregated into a global registry using [`linkme`](https://github.com/dtolnay/linkme/) crate, which involves no (generally discouraged) life-before-main trick. The registry is keyed with a pair of [`TypeId`]s, which are for the concrete type backing an object of a sub-trait of [`CastFrom`] and the target trait (the actual implementation is a bit different here, but conceptually so).
+Those trampoline functions are aggregated into a global registry
+using [`linkme`](https://github.com/dtolnay/linkme/) crate, which involves no (generally discouraged)
+life-before-main trick. The registry is keyed with a pair of [`TypeId`]s, which are those of the concrete type
+backing a trait object for a sub-trait of [`CastFrom`] and the target trait (the actual implementation
+is a bit different here, but conceptually so).
 
-In the course, it doesn't rely on any unstable Rust implementation details such as the layout of trait objects that may be changed in the future.
+In the course, it doesn't rely on any unstable Rust implementation details such as the layout of trait objects
+that may be changed in the future.
 
 # Credits
-`intertrait` has taken much of its core ideas from the great [`traitcast`](https://github.com/bch29/traitcast) crate. This crate enhances mainly in the ergonomics.
+`intertrait` has taken much of its core ideas from the great [`traitcast`](https://github.com/bch29/traitcast) crate.
+This crate enhances mainly in the ergonomics.
 
 # License
 Licensed under either of

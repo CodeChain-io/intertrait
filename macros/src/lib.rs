@@ -30,7 +30,7 @@ mod item_type;
 ///     fn greet(&self);
 /// }
 ///
-/// // Greet can be cast into from any CastFrom sub-trait object backed by Data.
+/// // Greet can be cast into from any sub-trait of CastFrom implemented by Data.
 /// #[cast_to]
 /// impl Greet for Data {
 ///     fn greet(&self) {
@@ -42,7 +42,7 @@ mod item_type;
 /// ## On a type definition
 /// Use when a target trait is derived or implemented in an external crate.
 /// ```
-/// // Debug can be cast into from any CastFrom sub-trait object backed by Data.
+/// // Debug can be cast into from any sub-trait of CastFrom implemented by Data
 /// #[cast_to(std::fmt::Debug)]
 /// #[derive(std::fmt::Debug)]
 /// struct Data;

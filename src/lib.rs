@@ -96,24 +96,24 @@ static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), BoxedCaster, BuildFastHasher>>
             .collect()
     });
 
-/// A `Caster` knows how to cast a reference to or `Box` of a trait object of type `Any`
-/// to a trait object of type `T`. Each `Caster` instance is specific to a concrete type.
+/// A `Caster` knows how to cast a reference to or `Box` of a trait object for `Any`
+/// to a trait object of trait `T`. Each `Caster` instance is specific to a concrete type.
 /// That is, it knows how to cast to single specific trait implemented by single specific type.
 ///
 /// An implementation of a trait for a concrete type doesn't need to manually provide
 /// a `Caster`. Instead attach `#[cast_to]` to the `impl` block.
 #[doc(hidden)]
 pub struct Caster<T: ?Sized + 'static> {
-    /// Casts a reference to a trait object of type `Any` from a concrete type `S`
-    /// to a reference to a trait object of type `T`.
+    /// Casts a reference to a trait object for `Any` from a concrete type `S`
+    /// to a reference to a trait object for trait `T`.
     pub cast_ref: fn(from: &dyn Any) -> Option<&T>,
 
-    /// Casts a mutable reference to a trait object of type `Any` from a concrete type `S`
-    /// to a mutable reference to a trait object of type `T`.
+    /// Casts a mutable reference to a trait object for `Any` from a concrete type `S`
+    /// to a mutable reference to a trait object for trait `T`.
     pub cast_mut: fn(from: &mut dyn Any) -> Option<&mut T>,
 
-    /// Casts a `Box` holding a trait object of type `Any` from a concrete type `S`
-    /// to another `Box` holding a trait object of type `T`.
+    /// Casts a `Box` holding a trait object for `Any` from a concrete type `S`
+    /// to another `Box` holding a trait object for trait `T`.
     pub cast_box: fn(from: Box<dyn Any>) -> CastBoxResult<T>,
 }
 
@@ -138,7 +138,7 @@ fn caster<T: ?Sized + 'static>(type_id: TypeId) -> Option<&'static Caster<T>> {
 ///
 /// **Note**: [`CastFrom`] will become obsolete and be replaced with [`std::any::Any`]
 /// once the [unsized coercion](https://doc.rust-lang.org/reference/type-coercions.html#unsized-coercions)
-/// from a trait object to an object of its super-trait is implemented in the stable Rust.
+/// from a trait object to another for its super-trait is implemented in the stable Rust.
 ///
 /// [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
 pub trait CastFrom {

@@ -22,7 +22,7 @@ pub fn process(input: ItemImpl) -> TokenStream {
             (Some(bang), _, _) => quote_spanned! {
                 bang.span() => compile_error!("#[cast_to] is not for !Trait impl");
             },
-            (None, path, _) => generate_caster(&self_ty, &path),
+            (None, path, _) => generate_caster(self_ty, path),
         },
     };
 

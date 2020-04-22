@@ -242,7 +242,7 @@ impl CastFrom for dyn Any {
 /// let data = Box::new(Data);
 /// let source: Box<dyn Source> = data;
 /// let greet = source.box_to::<dyn Greet>();
-/// greet.unwrap().greet();
+/// greet.unwrap_or_else(|_| panic!("casting failed")).greet();
 /// ```
 /// ## Testing if a cast is possible
 /// ```
@@ -271,8 +271,9 @@ pub trait CastTo {
     /// Casts a mutable reference to this trait into that of type `T`.
     fn mut_to<T: ?Sized + 'static>(&mut self) -> Option<&mut T>;
 
-    /// Casts a box to this trait into that of type `T`.
-    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Option<Box<T>>;
+    /// Casts a box to this trait into that of type `T`. If fails, returns
+    /// the receiver.
+    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Result<Box<T>, Box<Self>>;
 
     /// Tests if this trait object can be cast into `T`.
     fn impls<T: ?Sized + 'static>(&self) -> bool;
@@ -292,10 +293,11 @@ impl<S: ?Sized + CastFrom> CastTo for S {
         (caster.cast_mut)(any).into()
     }
 
-    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Option<Box<T>> {
-        let any = self.box_any();
-        let caster = caster::<T>((*any).type_id())?;
-        (caster.cast_box)(any).into()
+    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
+        match caster::<T>((*self).type_id()) {
+            Some(caster) => Ok((caster.cast_box)(self.box_any())),
+            None => Err(self),
+        }
     }
 
     fn impls<T: ?Sized + 'static>(&self) -> bool {
@@ -356,7 +358,7 @@ mod tests {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
         let debug = st.box_to::<dyn Debug>();
-        assert!(debug.is_some());
+        assert!(debug.is_ok());
     }
 
     #[test]
@@ -380,7 +382,7 @@ mod tests {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
         let display = st.box_to::<dyn Display>();
-        assert!(display.is_none());
+        assert!(display.is_err());
     }
 
     #[test]
@@ -404,7 +406,7 @@ mod tests {
         let ts = Box::new(TestStruct);
         let st: Box<dyn Any> = ts;
         let debug = st.box_to::<dyn Debug>();
-        assert!(debug.is_some());
+        assert!(debug.is_ok());
     }
 
     #[test]

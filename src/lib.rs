@@ -410,42 +410,42 @@ mod tests {
     }
 
     #[test]
-    fn ok_ref() {
+    fn impls_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
         assert!(st.impls::<dyn Debug>());
     }
 
     #[test]
-    fn ok_mut() {
+    fn impls_mut() {
         let mut ts = TestStruct;
         let st: &mut dyn SourceTrait = &mut ts;
         assert!((*st).impls::<dyn Debug>());
     }
 
     #[test]
-    fn ok_box() {
+    fn impls_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
         assert!((*st).impls::<dyn Debug>());
     }
 
     #[test]
-    fn not_ok_ref() {
+    fn impls_not_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
         assert!(!st.impls::<dyn Display>());
     }
 
     #[test]
-    fn not_ok_mut() {
+    fn impls_not_mut() {
         let mut ts = TestStruct;
         let st: &mut dyn Any = &mut ts;
         assert!(!(*st).impls::<dyn Display>());
     }
 
     #[test]
-    fn not_ok_box() {
+    fn impls_not_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
         assert!(!st.impls::<dyn Display>());

@@ -1,4 +1,5 @@
 use intertrait::*;
+use intertrait::cast::*;
 use std::marker::PhantomData;
 
 #[cast_to(Greet)]
@@ -25,6 +26,6 @@ fn main() {
         phantom: PhantomData,
     };
     let source: &dyn Source = &data;
-    let greet = source.ref_to::<dyn Greet>();
+    let greet = source.cast::<dyn Greet>();
     greet.unwrap().greet();
 }

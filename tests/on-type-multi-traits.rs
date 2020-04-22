@@ -1,3 +1,4 @@
+use intertrait::cast::*;
 use intertrait::*;
 
 #[cast_to(Greet, Greet1, Greet2)]
@@ -42,12 +43,12 @@ fn test_multi_traits_on_struct() {
     let data = Data;
     let source: &dyn Source = &data;
 
-    let greet = source.ref_to::<dyn Greet>();
+    let greet = source.cast::<dyn Greet>();
     greet.unwrap().greet();
 
-    let greet1 = source.ref_to::<dyn Greet1>();
+    let greet1 = source.cast::<dyn Greet1>();
     greet1.unwrap().greet1();
 
-    let greet2 = source.ref_to::<dyn Greet2>();
+    let greet2 = source.cast::<dyn Greet2>();
     greet2.unwrap().greet2();
 }

@@ -1,3 +1,4 @@
+use intertrait::cast::*;
 use intertrait::*;
 
 #[cast_to(Greet)]
@@ -21,6 +22,6 @@ impl Source for Data {}
 fn test_cast_to_on_struct() {
     let data = Data;
     let source: &dyn Source = &data;
-    let greet = source.ref_to::<dyn Greet>();
+    let greet = source.cast::<dyn Greet>();
     greet.unwrap().greet();
 }

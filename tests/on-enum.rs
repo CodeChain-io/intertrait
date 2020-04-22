@@ -1,3 +1,4 @@
+use intertrait::cast::*;
 use intertrait::*;
 
 #[cast_to(Greet)]
@@ -25,6 +26,6 @@ impl Source for Data {}
 fn test_cast_to_on_enum() {
     let data = Data::Var2(1);
     let source: &dyn Source = &data;
-    let greet = source.ref_to::<dyn Greet>();
+    let greet = source.cast::<dyn Greet>();
     greet.unwrap().greet();
 }

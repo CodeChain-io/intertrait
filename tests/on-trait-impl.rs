@@ -1,4 +1,4 @@
-use intertrait::CastTo;
+use intertrait::cast::*;
 use intertrait::*;
 
 struct Data;
@@ -22,6 +22,6 @@ impl Source for Data {}
 fn test_cast_to_on_trait_impl() {
     let data = Data;
     let source: &dyn Source = &data;
-    let greet = source.ref_to::<dyn Greet>();
+    let greet = source.cast::<dyn Greet>();
     greet.unwrap().greet();
 }

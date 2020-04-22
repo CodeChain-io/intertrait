@@ -12,6 +12,7 @@
 //! # Usage
 //! ```
 //! use intertrait::*;
+//! use intertrait::cast::*;
 //!
 //! struct Data;
 //!
@@ -33,7 +34,7 @@
 //! fn main() {
 //!     let data = Data;
 //!     let source: &dyn Source = &data;
-//!     let greet = source.ref_to::<dyn Greet>();
+//!     let greet = source.cast::<dyn Greet>();
 //!     greet.unwrap().greet();
 //! }
 //! ```
@@ -62,6 +63,7 @@ pub use intertrait_macros::*;
 
 use crate::hasher::BuildFastHasher;
 
+pub mod cast;
 mod hasher;
 
 #[doc(hidden)]
@@ -178,133 +180,6 @@ impl CastFrom for dyn Any {
     }
 }
 
-/// A trait that is blanket-implemented for traits extending `Any` to allow for casting
-/// to another trait.
-///
-/// # Examples
-/// ## Casting an immutable reference
-///
-/// ```
-/// # use intertrait::*;
-/// # #[cast_to(Greet)]
-/// # struct Data;
-/// # trait Source: CastFrom {}
-/// # trait Greet {
-/// #     fn greet(&self);
-/// # }
-/// # impl Greet for Data {
-/// #    fn greet(&self) {
-/// #        println!("Hello");
-/// #    }
-/// # }
-/// impl Source for Data {}
-/// let data = Data;
-/// let source: &dyn Source = &data;
-/// let greet = source.ref_to::<dyn Greet>();
-/// greet.unwrap().greet();
-/// ```
-/// ## Casting a mutable reference.
-/// ```
-/// # use intertrait::*;
-/// # #[cast_to(Greet)]
-/// # struct Data;
-/// # trait Source: CastFrom {}
-/// # trait Greet {
-/// #     fn greet(&self);
-/// # }
-/// # impl Greet for Data {
-/// #    fn greet(&self) {
-/// #        println!("Hello");
-/// #    }
-/// # }
-/// impl Source for Data {}
-/// let mut data = Data;
-/// let source: &mut dyn Source = &mut data;
-/// let greet = source.mut_to::<dyn Greet>();
-/// greet.unwrap().greet();
-/// ```
-///
-/// ## Casting a Box.
-/// ```
-/// # use intertrait::*;
-/// # #[cast_to(Greet)]
-/// # struct Data;
-/// # trait Source: CastFrom {}
-/// # trait Greet {
-/// #     fn greet(&self);
-/// # }
-/// # impl Greet for Data {
-/// #    fn greet(&self) {
-/// #        println!("Hello");
-/// #    }
-/// # }
-/// impl Source for Data {}
-/// let data = Box::new(Data);
-/// let source: Box<dyn Source> = data;
-/// let greet = source.box_to::<dyn Greet>();
-/// greet.unwrap_or_else(|_| panic!("casting failed")).greet();
-/// ```
-/// ## Testing if a cast is possible
-/// ```
-/// # use intertrait::*;
-/// # #[cast_to(Greet)]
-/// # struct Data;
-/// # trait Source: CastFrom {}
-/// # trait Greet {
-/// #     fn greet(&self);
-/// # }
-/// # impl Greet for Data {
-/// #    fn greet(&self) {
-/// #        println!("Hello");
-/// #    }
-/// # }
-/// impl Source for Data {}
-/// let data = Data;
-/// let source: &dyn Source = &data;
-/// assert!(source.impls::<dyn Greet>());
-/// assert!(!source.impls::<dyn std::fmt::Debug>());
-/// ```
-pub trait CastTo {
-    /// Casts a reference to this trait into that of type `T`.
-    fn ref_to<T: ?Sized + 'static>(&self) -> Option<&T>;
-
-    /// Casts a mutable reference to this trait into that of type `T`.
-    fn mut_to<T: ?Sized + 'static>(&mut self) -> Option<&mut T>;
-
-    /// Casts a box to this trait into that of type `T`. If fails, returns
-    /// the receiver.
-    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Result<Box<T>, Box<Self>>;
-
-    /// Tests if this trait object can be cast into `T`.
-    fn impls<T: ?Sized + 'static>(&self) -> bool;
-}
-
-/// A blanket implementation of `CastTo` for traits extending `CastFrom`.
-impl<S: ?Sized + CastFrom> CastTo for S {
-    fn ref_to<T: ?Sized + 'static>(&self) -> Option<&T> {
-        let any = self.ref_any();
-        let caster = caster::<T>(any.type_id())?;
-        (caster.cast_ref)(any).into()
-    }
-
-    fn mut_to<T: ?Sized + 'static>(&mut self) -> Option<&mut T> {
-        let any = self.mut_any();
-        let caster = caster::<T>((*any).type_id())?;
-        (caster.cast_mut)(any).into()
-    }
-
-    fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        match caster::<T>((*self).type_id()) {
-            Some(caster) => Ok((caster.cast_box)(self.box_any())),
-            None => Err(self),
-        }
-    }
-
-    fn impls<T: ?Sized + 'static>(&self) -> bool {
-        CASTER_MAP.contains_key(&(self.type_id(), TypeId::of::<Caster<T>>()))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::any::{Any, TypeId};
@@ -314,8 +189,8 @@ mod tests {
 
     use crate::{BoxedCaster, CastFrom};
 
-    use super::CastTo;
-    use super::Caster;
+    use super::cast::*;
+    use super::*;
 
     #[distributed_slice(super::CASTERS)]
     static TEST_CASTER: fn() -> (TypeId, BoxedCaster) = create_test_caster;
@@ -338,74 +213,74 @@ mod tests {
     }
 
     #[test]
-    fn ref_to() {
+    fn cast_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        let debug = st.ref_to::<dyn Debug>();
+        let debug = st.cast::<dyn Debug>();
         assert!(debug.is_some());
     }
 
     #[test]
-    fn mut_to() {
+    fn cast_mut() {
         let mut ts = TestStruct;
         let st: &mut dyn SourceTrait = &mut ts;
-        let debug = st.mut_to::<dyn Debug>();
+        let debug = st.cast::<dyn Debug>();
         assert!(debug.is_some());
     }
 
     #[test]
-    fn box_to() {
+    fn cast_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        let debug = st.box_to::<dyn Debug>();
+        let debug = st.cast::<dyn Debug>();
         assert!(debug.is_ok());
     }
 
     #[test]
-    fn ref_to_wrong() {
+    fn cast_ref_wrong() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
-        let display = st.ref_to::<dyn Display>();
+        let display = st.cast::<dyn Display>();
         assert!(display.is_none());
     }
 
     #[test]
-    fn mut_to_wrong() {
+    fn cast_mut_wrong() {
         let mut ts = TestStruct;
         let st: &mut dyn SourceTrait = &mut ts;
-        let display = st.mut_to::<dyn Display>();
+        let display = st.cast::<dyn Display>();
         assert!(display.is_none());
     }
 
     #[test]
-    fn box_to_wrong() {
+    fn cast_box_wrong() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
-        let display = st.box_to::<dyn Display>();
+        let display = st.cast::<dyn Display>();
         assert!(display.is_err());
     }
 
     #[test]
-    fn ref_to_from_any() {
+    fn cast_ref_from_any() {
         let ts = TestStruct;
         let st: &dyn Any = &ts;
-        let debug = st.ref_to::<dyn Debug>();
+        let debug = st.cast::<dyn Debug>();
         assert!(debug.is_some());
     }
 
     #[test]
-    fn mut_to_from_any() {
+    fn cast_mut_from_any() {
         let mut ts = TestStruct;
         let st: &mut dyn Any = &mut ts;
-        let debug = st.mut_to::<dyn Debug>();
+        let debug = st.cast::<dyn Debug>();
         assert!(debug.is_some());
     }
 
     #[test]
-    fn box_to_from_any() {
+    fn cast_box_from_any() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn Any> = ts;
-        let debug = st.box_to::<dyn Debug>();
+        let debug = st.cast::<dyn Debug>();
         assert!(debug.is_ok());
     }
 

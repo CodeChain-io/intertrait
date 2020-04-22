@@ -66,8 +66,6 @@ mod hasher;
 
 #[doc(hidden)]
 pub type BoxedCaster = Box<dyn Any + Send + Sync>;
-#[doc(hidden)]
-pub type CastBoxResult<T> = Result<Box<T>, Box<dyn Any>>;
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
@@ -104,17 +102,17 @@ static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), BoxedCaster, BuildFastHasher>>
 /// a `Caster`. Instead attach `#[cast_to]` to the `impl` block.
 #[doc(hidden)]
 pub struct Caster<T: ?Sized + 'static> {
-    /// Casts a reference to a trait object for `Any` from a concrete type `S`
-    /// to a reference to a trait object for trait `T`.
-    pub cast_ref: fn(from: &dyn Any) -> Option<&T>,
+    /// Casts a reference to a trait object for `Any` to a reference to a trait object
+    /// for trait `T`.
+    pub cast_ref: fn(from: &dyn Any) -> &T,
 
-    /// Casts a mutable reference to a trait object for `Any` from a concrete type `S`
-    /// to a mutable reference to a trait object for trait `T`.
-    pub cast_mut: fn(from: &mut dyn Any) -> Option<&mut T>,
+    /// Casts a mutable reference to a trait object for `Any` to a mutable reference
+    /// to a trait object for trait `T`.
+    pub cast_mut: fn(from: &mut dyn Any) -> &mut T,
 
-    /// Casts a `Box` holding a trait object for `Any` from a concrete type `S`
-    /// to another `Box` holding a trait object for trait `T`.
-    pub cast_box: fn(from: Box<dyn Any>) -> CastBoxResult<T>,
+    /// Casts a `Box` holding a trait object for `Any` to another `Box` holding a trait object
+    /// for trait `T`.
+    pub cast_box: fn(from: Box<dyn Any>) -> Box<T>,
 }
 
 /// Returns a `Caster<S, T>` from a concrete type `S` to a trait `T` implemented by it.
@@ -141,7 +139,7 @@ fn caster<T: ?Sized + 'static>(type_id: TypeId) -> Option<&'static Caster<T>> {
 /// from a trait object to another for its super-trait is implemented in the stable Rust.
 ///
 /// [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
-pub trait CastFrom {
+pub trait CastFrom: Any + 'static {
     /// Returns a immutable reference to `Any`, which is backed by the type implementing this trait.
     fn ref_any(&self) -> &dyn Any;
 
@@ -285,23 +283,23 @@ impl<S: ?Sized + CastFrom> CastTo for S {
     fn ref_to<T: ?Sized + 'static>(&self) -> Option<&T> {
         let any = self.ref_any();
         let caster = caster::<T>(any.type_id())?;
-        (caster.cast_ref)(any)
+        (caster.cast_ref)(any).into()
     }
 
     fn mut_to<T: ?Sized + 'static>(&mut self) -> Option<&mut T> {
         let any = self.mut_any();
         let caster = caster::<T>((*any).type_id())?;
-        (caster.cast_mut)(any)
+        (caster.cast_mut)(any).into()
     }
 
     fn box_to<T: ?Sized + 'static>(self: Box<Self>) -> Option<Box<T>> {
         let any = self.box_any();
         let caster = caster::<T>((*any).type_id())?;
-        (caster.cast_box)(any).map(|b| b as Box<T>).ok()
+        (caster.cast_box)(any).into()
     }
 
     fn impls<T: ?Sized + 'static>(&self) -> bool {
-        CASTER_MAP.contains_key(&(self.ref_any().type_id(), TypeId::of::<Caster<T>>()))
+        CASTER_MAP.contains_key(&(self.type_id(), TypeId::of::<Caster<T>>()))
     }
 }
 
@@ -330,12 +328,9 @@ mod tests {
     fn create_test_caster() -> (TypeId, BoxedCaster) {
         let type_id = TypeId::of::<TestStruct>();
         let caster = Box::new(Caster::<dyn Debug> {
-            cast_ref: |from| from.downcast_ref::<TestStruct>().map(|c| c as &dyn Debug),
-            cast_mut: |from| {
-                from.downcast_mut::<TestStruct>()
-                    .map(|c| c as &mut dyn Debug)
-            },
-            cast_box: |from| from.downcast::<TestStruct>().map(|c| c as Box<dyn Debug>),
+            cast_ref: |from| from.downcast_ref::<TestStruct>().unwrap(),
+            cast_mut: |from| from.downcast_mut::<TestStruct>().unwrap(),
+            cast_box: |from| from.downcast::<TestStruct>().unwrap(),
         });
         (type_id, caster)
     }

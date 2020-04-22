@@ -18,9 +18,9 @@ pub fn generate_caster(ty: &impl ToTokens, trait_: &Path) -> TokenStream {
         fn #fn_ident() -> (std::any::TypeId, intertrait::BoxedCaster) {
             let type_id = std::any::TypeId::of::<#ty>();
             let caster = Box::new(intertrait::Caster::<dyn #trait_> {
-                cast_ref: |from| from.downcast_ref::<#ty>().map(|c| c as &dyn #trait_),
-                cast_mut: |from| from.downcast_mut::<#ty>().map(|c| c as &mut dyn #trait_),
-                cast_box: |from| from.downcast::<#ty>().map(|c| c as Box<dyn #trait_>),
+                cast_ref: |from| from.downcast_ref::<#ty>().unwrap(),
+                cast_mut: |from| from.downcast_mut::<#ty>().unwrap(),
+                cast_box: |from| from.downcast::<#ty>().unwrap(),
             });
             (type_id, caster)
         }

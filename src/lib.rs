@@ -47,11 +47,11 @@
 //!
 //! Refer to the documents for each of macros for details.
 //!
-//! For casting, refer to [`CastTo`].
+//! For casting, refer to traits defined in [`cast`] module.
 //!
 //! [cast_to]: ./attr.cast_to.html
 //! [castable_to]: ./macro.castable_to.html
-//! [`CastTo`]: ./trait.CastTo.html
+//! [`cast`]: ./cast/index.html
 //! [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
 use std::any::{Any, TypeId};
 use std::collections::HashMap;

@@ -125,7 +125,6 @@ that may be changed in the future.
 
 # Credits
 `intertrait` has taken much of its core ideas from the great [`traitcast`](https://github.com/bch29/traitcast) crate.
-This crate enhances mainly in the ergonomics.
 
 # License
 Licensed under either of

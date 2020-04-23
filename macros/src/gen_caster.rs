@@ -21,6 +21,7 @@ pub fn generate_caster(ty: &impl ToTokens, trait_: &Path) -> TokenStream {
                 cast_ref: |from| from.downcast_ref::<#ty>().unwrap(),
                 cast_mut: |from| from.downcast_mut::<#ty>().unwrap(),
                 cast_box: |from| from.downcast::<#ty>().unwrap(),
+                cast_rc: |from| from.downcast::<#ty>().unwrap(),
             });
             (type_id, caster)
         }

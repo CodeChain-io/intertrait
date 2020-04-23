@@ -62,6 +62,7 @@ use once_cell::sync::Lazy;
 pub use intertrait_macros::*;
 
 use crate::hasher::BuildFastHasher;
+use std::rc::Rc;
 
 pub mod cast;
 mod hasher;
@@ -115,6 +116,10 @@ pub struct Caster<T: ?Sized + 'static> {
     /// Casts a `Box` holding a trait object for `Any` to another `Box` holding a trait object
     /// for trait `T`.
     pub cast_box: fn(from: Box<dyn Any>) -> Box<T>,
+
+    /// Casts a `Rc` holding a trait object for `Any` to another `Rc` holding a trait object
+    /// for trait `T`.
+    pub cast_rc: fn(from: Rc<dyn Any>) -> Rc<T>,
 }
 
 /// Returns a `Caster<S, T>` from a concrete type `S` to a trait `T` implemented by it.
@@ -150,6 +155,9 @@ pub trait CastFrom: Any + 'static {
 
     /// Returns a `Box` of `Any`, which is backed by the type implementing this trait.
     fn box_any(self: Box<Self>) -> Box<dyn Any>;
+
+    /// Returns an `Rc` of `Any`, which is backed by the type implementing this trait.
+    fn rc_any(self: Rc<Self>) -> Rc<dyn Any>;
 }
 
 impl<T: Sized + 'static> CastFrom for T {
@@ -164,6 +172,10 @@ impl<T: Sized + 'static> CastFrom for T {
     fn box_any(self: Box<Self>) -> Box<dyn Any> {
         self
     }
+
+    fn rc_any(self: Rc<Self>) -> Rc<dyn Any> {
+        self
+    }
 }
 
 impl CastFrom for dyn Any {
@@ -176,6 +188,10 @@ impl CastFrom for dyn Any {
     }
 
     fn box_any(self: Box<Self>) -> Box<dyn Any> {
+        self
+    }
+
+    fn rc_any(self: Rc<Self>) -> Rc<dyn Any> {
         self
     }
 }
@@ -208,6 +224,7 @@ mod tests {
             cast_ref: |from| from.downcast_ref::<TestStruct>().unwrap(),
             cast_mut: |from| from.downcast_mut::<TestStruct>().unwrap(),
             cast_box: |from| from.downcast::<TestStruct>().unwrap(),
+            cast_rc: |from| from.downcast::<TestStruct>().unwrap(),
         });
         (type_id, caster)
     }
@@ -237,6 +254,14 @@ mod tests {
     }
 
     #[test]
+    fn cast_rc() {
+        let ts = Rc::new(TestStruct);
+        let st: Rc<dyn SourceTrait> = ts;
+        let debug = st.cast::<dyn Debug>();
+        assert!(debug.is_ok());
+    }
+
+    #[test]
     fn cast_ref_wrong() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
@@ -256,6 +281,14 @@ mod tests {
     fn cast_box_wrong() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
+        let display = st.cast::<dyn Display>();
+        assert!(display.is_err());
+    }
+
+    #[test]
+    fn cast_rc_wrong() {
+        let ts = Rc::new(TestStruct);
+        let st: Rc<dyn SourceTrait> = ts;
         let display = st.cast::<dyn Display>();
         assert!(display.is_err());
     }
@@ -285,6 +318,14 @@ mod tests {
     }
 
     #[test]
+    fn cast_rc_from_any() {
+        let ts = Rc::new(TestStruct);
+        let st: Rc<dyn Any> = ts;
+        let debug = st.cast::<dyn Debug>();
+        assert!(debug.is_ok());
+    }
+
+    #[test]
     fn impls_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
@@ -302,6 +343,13 @@ mod tests {
     fn impls_box() {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
+        assert!((*st).impls::<dyn Debug>());
+    }
+
+    #[test]
+    fn impls_rc() {
+        let ts = Rc::new(TestStruct);
+        let st: Rc<dyn SourceTrait> = ts;
         assert!((*st).impls::<dyn Debug>());
     }
 
@@ -324,5 +372,12 @@ mod tests {
         let ts = Box::new(TestStruct);
         let st: Box<dyn SourceTrait> = ts;
         assert!(!st.impls::<dyn Display>());
+    }
+
+    #[test]
+    fn impls_not_rc() {
+        let ts = Rc::new(TestStruct);
+        let st: Rc<dyn SourceTrait> = ts;
+        assert!(!(*st).impls::<dyn Display>());
     }
 }

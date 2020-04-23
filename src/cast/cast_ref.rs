@@ -52,7 +52,7 @@ use crate::{caster, CastFrom, Caster, CASTER_MAP};
 /// assert!(source.impls::<dyn Greet>());
 /// assert!(!source.impls::<dyn std::fmt::Debug>());
 /// ```
-pub trait CastRefTo {
+pub trait CastRef {
     /// Casts a reference to this trait into that of type `T`.
     fn cast<'a, T: ?Sized + 'static>(&self) -> Option<&T>;
 
@@ -60,8 +60,8 @@ pub trait CastRefTo {
     fn impls<T: ?Sized + 'static>(&self) -> bool;
 }
 
-/// A blanket implementation of `CastRefTo` for traits extending `CastFrom`.
-impl<S: ?Sized + CastFrom> CastRefTo for S {
+/// A blanket implementation of `CastRef` for traits extending `CastFrom`.
+impl<S: ?Sized + CastFrom> CastRef for S {
     fn cast<T: ?Sized + 'static>(&self) -> Option<&T> {
         let any = self.ref_any();
         let caster = caster::<T>(any.type_id())?;

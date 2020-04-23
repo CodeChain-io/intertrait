@@ -26,13 +26,13 @@ use crate::{caster, CastFrom};
 /// let greet = source.cast::<dyn Greet>();
 /// greet.unwrap_or_else(|_| panic!("casting failed")).greet();
 /// ```
-pub trait CastBoxTo {
+pub trait CastBox {
     /// Casts a box to this trait into that of type `T`. If fails, returns the receiver.
     fn cast<T: ?Sized + 'static>(self: Box<Self>) -> Result<Box<T>, Box<Self>>;
 }
 
-/// A blanket implementation of `CastBoxTo` for traits extending `CastFrom`.
-impl<S: ?Sized + CastFrom> CastBoxTo for S {
+/// A blanket implementation of `CastBox` for traits extending `CastFrom`.
+impl<S: ?Sized + CastFrom> CastBox for S {
     fn cast<T: ?Sized + 'static>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
         match caster::<T>((*self).type_id()) {
             Some(caster) => Ok((caster.cast_box)(self.box_any())),

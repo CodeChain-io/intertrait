@@ -26,13 +26,13 @@ use crate::{caster, CastFrom};
 /// let greet = source.cast::<dyn Greet>();
 /// greet.unwrap().greet();
 /// ```
-pub trait CastMutTo {
+pub trait CastMut {
     /// Casts a mutable reference to this trait into that of type `T`.
     fn cast<T: ?Sized + 'static>(&mut self) -> Option<&mut T>;
 }
 
-/// A blanket implementation of `CastMutTo` for traits extending `CastFrom`.
-impl<S: ?Sized + CastFrom> CastMutTo for S {
+/// A blanket implementation of `CastMut` for traits extending `CastFrom`.
+impl<S: ?Sized + CastFrom> CastMut for S {
     fn cast<T: ?Sized + 'static>(&mut self) -> Option<&mut T> {
         let any = self.mut_any();
         let caster = caster::<T>((*any).type_id())?;

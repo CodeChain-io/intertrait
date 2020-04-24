@@ -82,7 +82,7 @@ impl Greet for Data {
 struct Data;
 ```
 
-## `castable_to!(Type: Trait1, Trait2)`
+## `castable_to!(Type => Trait1, Trait2)`
 For the type, the traits following `:` are designated as target traits.
 
 ```rust
@@ -98,7 +98,7 @@ impl Greet for Data {
 }
 // Only in an item position due to the current limitation in the stable Rust.
 // https://github.com/rust-lang/rust/pull/68717
-castable_to!(Data: Greet, std::fmt::Debug);
+castable_to!(Data => Greet, std::fmt::Debug);
 
 fn main() {}
 ```

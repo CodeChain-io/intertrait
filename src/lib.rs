@@ -43,7 +43,7 @@
 //!
 //! * [`#[cast_to]`][cast_to] to `impl` item
 //! * [`#[cast_to(Trait)]`][cast_to] to type definition
-//! * [`castable_to!(Type: Trait1, Trait2)`][castable_to]
+//! * [`castable_to!(Type => Trait1, Trait2)`][castable_to]
 //!
 //! Refer to the documents for each of macros for details.
 //!
@@ -55,6 +55,8 @@
 //! [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::sync::Arc;
 
 use linkme::distributed_slice;
 use once_cell::sync::Lazy;
@@ -62,7 +64,6 @@ use once_cell::sync::Lazy;
 pub use intertrait_macros::*;
 
 use crate::hasher::BuildFastHasher;
-use std::rc::Rc;
 
 pub mod cast;
 mod hasher;
@@ -83,9 +84,9 @@ doc_comment::doctest!("../README.md");
 #[distributed_slice]
 pub static CASTERS: [fn() -> (TypeId, BoxedCaster)] = [..];
 
-/// A `HashMap` mapping `TypeId` of a [`Caster<S, T>`] to an instance of it.
+/// A `HashMap` mapping `TypeId` of a [`Caster<T>`] to an instance of it.
 ///
-/// [`Caster<S, T>`]: ./struct.Caster.html
+/// [`Caster<T>`]: ./struct.Caster.html
 static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), BoxedCaster, BuildFastHasher>> =
     Lazy::new(|| {
         CASTERS
@@ -97,6 +98,10 @@ static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), BoxedCaster, BuildFastHasher>>
             .collect()
     });
 
+fn cast_arc_panic<T: ?Sized + 'static>(_: Arc<dyn Any + Sync + Send>) -> Arc<T> {
+    panic!("Prepend [sync] to the list of target traits for Sync + Send types")
+}
+
 /// A `Caster` knows how to cast a reference to or `Box` of a trait object for `Any`
 /// to a trait object of trait `T`. Each `Caster` instance is specific to a concrete type.
 /// That is, it knows how to cast to single specific trait implemented by single specific type.
@@ -105,8 +110,8 @@ static CASTER_MAP: Lazy<HashMap<(TypeId, TypeId), BoxedCaster, BuildFastHasher>>
 /// a `Caster`. Instead attach `#[cast_to]` to the `impl` block.
 #[doc(hidden)]
 pub struct Caster<T: ?Sized + 'static> {
-    /// Casts a reference to a trait object for `Any` to a reference to a trait object
-    /// for trait `T`.
+    /// Casts an immutable reference to a trait object for `Any` to a reference
+    /// to a trait object for trait `T`.
     pub cast_ref: fn(from: &dyn Any) -> &T,
 
     /// Casts a mutable reference to a trait object for `Any` to a mutable reference
@@ -117,9 +122,46 @@ pub struct Caster<T: ?Sized + 'static> {
     /// for trait `T`.
     pub cast_box: fn(from: Box<dyn Any>) -> Box<T>,
 
-    /// Casts a `Rc` holding a trait object for `Any` to another `Rc` holding a trait object
+    /// Casts an `Rc` holding a trait object for `Any` to another `Rc` holding a trait object
     /// for trait `T`.
     pub cast_rc: fn(from: Rc<dyn Any>) -> Rc<T>,
+
+    /// Casts an `Arc` holding a trait object for `Any + Sync + Send + 'static`
+    /// to another `Arc` holding a trait object for trait `T`.
+    pub cast_arc: fn(from: Arc<dyn Any + Sync + Send + 'static>) -> Arc<T>,
+}
+
+impl<T: ?Sized + 'static> Caster<T> {
+    pub fn new(
+        cast_ref: fn(from: &dyn Any) -> &T,
+        cast_mut: fn(from: &mut dyn Any) -> &mut T,
+        cast_box: fn(from: Box<dyn Any>) -> Box<T>,
+        cast_rc: fn(from: Rc<dyn Any>) -> Rc<T>,
+    ) -> Caster<T> {
+        Caster::<T> {
+            cast_ref,
+            cast_mut,
+            cast_box,
+            cast_rc,
+            cast_arc: cast_arc_panic,
+        }
+    }
+
+    pub fn new_sync(
+        cast_ref: fn(from: &dyn Any) -> &T,
+        cast_mut: fn(from: &mut dyn Any) -> &mut T,
+        cast_box: fn(from: Box<dyn Any>) -> Box<T>,
+        cast_rc: fn(from: Rc<dyn Any>) -> Rc<T>,
+        cast_arc: fn(from: Arc<dyn Any + Sync + Send>) -> Arc<T>,
+    ) -> Caster<T> {
+        Caster::<T> {
+            cast_ref,
+            cast_mut,
+            cast_box,
+            cast_rc,
+            cast_arc,
+        }
+    }
 }
 
 /// Returns a `Caster<S, T>` from a concrete type `S` to a trait `T` implemented by it.
@@ -131,8 +173,8 @@ fn caster<T: ?Sized + 'static>(type_id: TypeId) -> Option<&'static Caster<T>> {
 
 /// `CastFrom` must be extended by a trait that wants to allow for casting into another trait.
 ///
-/// It is used for obtaining an object of [`Any`] from an object of a sub-trait of `CastFrom`,
-/// and blanket implemented for all `Sized + 'static` types.
+/// It is used for obtaining a trait object for [`Any`] from a trait object for its sub-trait,
+/// and blanket implemented for all `Sized + Any + 'static` types.
 ///
 /// # Examples
 /// ```ignore
@@ -140,12 +182,6 @@ fn caster<T: ?Sized + 'static>(type_id: TypeId) -> Option<&'static Caster<T>> {
 ///     ...
 /// }
 /// ```
-///
-/// **Note**: [`CastFrom`] will become obsolete and be replaced with [`std::any::Any`]
-/// once the [unsized coercion](https://doc.rust-lang.org/reference/type-coercions.html#unsized-coercions)
-/// from a trait object to another for its super-trait is implemented in the stable Rust.
-///
-/// [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
 pub trait CastFrom: Any + 'static {
     /// Returns a immutable reference to `Any`, which is backed by the type implementing this trait.
     fn ref_any(&self) -> &dyn Any;
@@ -160,7 +196,24 @@ pub trait CastFrom: Any + 'static {
     fn rc_any(self: Rc<Self>) -> Rc<dyn Any>;
 }
 
-impl<T: Sized + 'static> CastFrom for T {
+/// `CastFromSync` must be extended by a trait that is `Any + Sync + Send + 'static`
+/// and wants to allow for casting into another trait behind references and smart pointers
+/// especially including `Arc`.
+///
+/// It is used for obtaining a trait object for [`Any + Sync + Send + 'static`] from an object
+/// for its sub-trait, and blanket implemented for all `Sized + Sync + Send + 'static` types.
+///
+/// # Examples
+/// ```ignore
+/// trait Source: CastFromSync {
+///     ...
+/// }
+/// ```
+pub trait CastFromSync: CastFrom + Sync + Send + 'static {
+    fn arc_any(self: Arc<Self>) -> Arc<dyn Any + Sync + Send + 'static>;
+}
+
+impl<T: Sized + Any + 'static> CastFrom for T {
     fn ref_any(&self) -> &dyn Any {
         self
     }
@@ -178,7 +231,7 @@ impl<T: Sized + 'static> CastFrom for T {
     }
 }
 
-impl CastFrom for dyn Any {
+impl CastFrom for dyn Any + 'static {
     fn ref_any(&self) -> &dyn Any {
         self
     }
@@ -192,6 +245,36 @@ impl CastFrom for dyn Any {
     }
 
     fn rc_any(self: Rc<Self>) -> Rc<dyn Any> {
+        self
+    }
+}
+
+impl<T: Sized + Sync + Send + 'static> CastFromSync for T {
+    fn arc_any(self: Arc<Self>) -> Arc<dyn Any + Sync + Send + 'static> {
+        self
+    }
+}
+
+impl CastFrom for dyn Any + Sync + Send + 'static {
+    fn ref_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn mut_any(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn box_any(self: Box<Self>) -> Box<dyn Any> {
+        self
+    }
+
+    fn rc_any(self: Rc<Self>) -> Rc<dyn Any> {
+        self
+    }
+}
+
+impl CastFromSync for dyn Any + Sync + Send + 'static {
+    fn arc_any(self: Arc<Self>) -> Arc<dyn Any + Sync + Send + 'static> {
         self
     }
 }
@@ -203,7 +286,7 @@ mod tests {
 
     use linkme::distributed_slice;
 
-    use crate::{BoxedCaster, CastFrom};
+    use crate::{BoxedCaster, CastFromSync};
 
     use super::cast::*;
     use super::*;
@@ -214,7 +297,7 @@ mod tests {
     #[derive(Debug)]
     struct TestStruct;
 
-    trait SourceTrait: CastFrom {}
+    trait SourceTrait: CastFromSync {}
 
     impl SourceTrait for TestStruct {}
 
@@ -225,6 +308,7 @@ mod tests {
             cast_mut: |from| from.downcast_mut::<TestStruct>().unwrap(),
             cast_box: |from| from.downcast::<TestStruct>().unwrap(),
             cast_rc: |from| from.downcast::<TestStruct>().unwrap(),
+            cast_arc: |from| from.downcast::<TestStruct>().unwrap(),
         });
         (type_id, caster)
     }
@@ -262,6 +346,14 @@ mod tests {
     }
 
     #[test]
+    fn cast_arc() {
+        let ts = Arc::new(TestStruct);
+        let st: Arc<dyn SourceTrait> = ts;
+        let debug = st.cast::<dyn Debug>();
+        assert!(debug.is_ok());
+    }
+
+    #[test]
     fn cast_ref_wrong() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
@@ -289,6 +381,14 @@ mod tests {
     fn cast_rc_wrong() {
         let ts = Rc::new(TestStruct);
         let st: Rc<dyn SourceTrait> = ts;
+        let display = st.cast::<dyn Display>();
+        assert!(display.is_err());
+    }
+
+    #[test]
+    fn cast_arc_wrong() {
+        let ts = Arc::new(TestStruct);
+        let st: Arc<dyn SourceTrait> = ts;
         let display = st.cast::<dyn Display>();
         assert!(display.is_err());
     }
@@ -326,6 +426,14 @@ mod tests {
     }
 
     #[test]
+    fn cast_arc_from_any() {
+        let ts = Arc::new(TestStruct);
+        let st: Arc<dyn Any + Send + Sync> = ts;
+        let debug = st.cast::<dyn Debug>();
+        assert!(debug.is_ok());
+    }
+
+    #[test]
     fn impls_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
@@ -354,6 +462,13 @@ mod tests {
     }
 
     #[test]
+    fn impls_arc() {
+        let ts = Arc::new(TestStruct);
+        let st: Arc<dyn SourceTrait> = ts;
+        assert!((*st).impls::<dyn Debug>());
+    }
+
+    #[test]
     fn impls_not_ref() {
         let ts = TestStruct;
         let st: &dyn SourceTrait = &ts;
@@ -378,6 +493,13 @@ mod tests {
     fn impls_not_rc() {
         let ts = Rc::new(TestStruct);
         let st: Rc<dyn SourceTrait> = ts;
+        assert!(!(*st).impls::<dyn Display>());
+    }
+
+    #[test]
+    fn impls_not_arc() {
+        let ts = Arc::new(TestStruct);
+        let st: Arc<dyn SourceTrait> = ts;
         assert!(!(*st).impls::<dyn Display>());
     }
 }

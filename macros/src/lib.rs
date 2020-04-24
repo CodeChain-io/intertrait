@@ -5,13 +5,10 @@ use proc_macro::TokenStream;
 use syn::parse_macro_input;
 use syn::{DeriveInput, ItemImpl};
 
-use cast_to_args::CastToArgs;
-use castable_to_args::CastableToArgs;
+use args::{Casts, Flag, Targets};
+use gen_caster::generate_caster;
 
-use crate::gen_caster::generate_caster;
-
-mod cast_to_args;
-mod castable_to_args;
+mod args;
 mod gen_caster;
 mod item_impl;
 mod item_type;
@@ -49,12 +46,11 @@ mod item_type;
 /// ```
 #[proc_macro_attribute]
 pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = parse_macro_input!(args as CastToArgs);
-    let expanded = match args {
-        CastToArgs::None => item_impl::process(parse_macro_input!(input as ItemImpl)),
-        CastToArgs::Traits(paths) => {
-            item_type::process(paths, parse_macro_input!(input as DeriveInput))
-        }
+    let Targets { flags, paths } = parse_macro_input!(args as args::Targets);
+    let expanded = if paths.is_empty() {
+        item_impl::process(&flags, parse_macro_input!(input as ItemImpl))
+    } else {
+        item_type::process(&flags, paths, parse_macro_input!(input as DeriveInput))
     };
     expanded.into()
 }
@@ -81,14 +77,18 @@ pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
 ///         println!("Hello");
 ///     }
 /// }
-/// castable_to! { Data: std::fmt::Debug, Greet }
+/// castable_to! { Data => std::fmt::Debug, Greet }
 /// ```
 #[proc_macro]
 pub fn castable_to(input: TokenStream) -> TokenStream {
-    let args = parse_macro_input!(input as CastableToArgs);
-    args.traits
+    let Casts {
+        ty,
+        targets: Targets { flags, paths },
+    } = parse_macro_input!(input);
+
+    paths
         .iter()
-        .flat_map(|t| generate_caster(&args.ty, t))
+        .map(|t| generate_caster(&ty, t, flags.contains(&Flag::Sync)))
         .collect::<proc_macro2::TokenStream>()
         .into()
 }

@@ -37,7 +37,7 @@ impl Greet2 for Data {
 
 impl Source for Data {}
 
-castable_to! { Data: crate::Greet, Greet1, Greet2 }
+castable_to! { Data => crate::Greet, Greet1, Greet2 }
 
 #[test]
 fn test_multi_traits_on_struct() {

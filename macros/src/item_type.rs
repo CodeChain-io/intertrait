@@ -1,13 +1,15 @@
+use std::collections::HashSet;
+
 use proc_macro2::TokenStream;
 use syn::spanned::Spanned;
 use syn::{DeriveInput, Path};
 
-use quote::quote;
-use quote::quote_spanned;
+use quote::{quote, quote_spanned};
 
+use crate::args::Flag;
 use crate::gen_caster::generate_caster;
 
-pub fn process(paths: Vec<Path>, input: DeriveInput) -> TokenStream {
+pub fn process(flags: &HashSet<Flag>, paths: Vec<Path>, input: DeriveInput) -> TokenStream {
     let DeriveInput {
         ref ident,
         ref generics,
@@ -20,7 +22,7 @@ pub fn process(paths: Vec<Path>, input: DeriveInput) -> TokenStream {
     } else {
         paths
             .into_iter()
-            .flat_map(|t| generate_caster(ident, &t))
+            .flat_map(|t| generate_caster(ident, &t, flags.contains(&Flag::Sync)))
             .collect()
     };
     quote! {

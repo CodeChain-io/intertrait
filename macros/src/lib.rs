@@ -2,8 +2,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 
-use syn::parse_macro_input;
-use syn::{DeriveInput, ItemImpl};
+use syn::{parse, parse_macro_input, DeriveInput, ItemImpl};
 
 use args::{Casts, Flag, Targets};
 use gen_caster::generate_caster;
@@ -46,13 +45,19 @@ mod item_type;
 /// ```
 #[proc_macro_attribute]
 pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
-    let Targets { flags, paths } = parse_macro_input!(args as args::Targets);
-    let expanded = if paths.is_empty() {
-        item_impl::process(&flags, parse_macro_input!(input as ItemImpl))
-    } else {
-        item_type::process(&flags, paths, parse_macro_input!(input as DeriveInput))
-    };
-    expanded.into()
+    match parse::<Targets>(args) {
+        Ok(Targets { flags, paths }) => {
+            if paths.is_empty() {
+                item_impl::process(&flags, parse_macro_input!(input as ItemImpl))
+            } else {
+                item_type::process(&flags, paths, parse_macro_input!(input as DeriveInput))
+            }
+        }
+        Err(err) => vec![err.to_compile_error(), input.into()]
+            .into_iter()
+            .collect(),
+    }
+    .into()
 }
 
 /// Declare target traits for casting implemented by a type.

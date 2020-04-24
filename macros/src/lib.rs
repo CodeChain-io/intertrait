@@ -17,6 +17,9 @@ mod item_type;
 /// If on an `impl` item, no argument is allowed. But on a type definition, the target traits
 /// must be listed explicitly.
 ///
+/// Add `[sync]` before the list of traits if the underlying type is `Sync + Send` and you
+/// need `std::sync::Arc`.
+///
 /// # Examples
 /// ## On a trait impl
 /// ```
@@ -43,6 +46,15 @@ mod item_type;
 /// #[derive(std::fmt::Debug)]
 /// struct Data;
 /// ```
+///
+/// ## For Arc
+/// Use when the underlying type is `Sync + Send` and you want to use `Arc`.
+/// ```
+/// // Debug can be cast into from any sub-trait of CastFrom implemented by Data
+/// #[cast_to([sync] std::fmt::Debug)]
+/// #[derive(std::fmt::Debug)]
+/// struct Data;
+/// ```
 #[proc_macro_attribute]
 pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
     match parse::<Targets>(args) {
@@ -60,7 +72,7 @@ pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// Declare target traits for casting implemented by a type.
+/// Declares target traits for casting implemented by a type.
 ///
 /// This macro is for registering both a concrete type and its traits to be targets for casting.
 /// Useful when the type definition and the trait implementations are in an external crate.
@@ -83,6 +95,23 @@ pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// castable_to! { Data => std::fmt::Debug, Greet }
+/// ```
+///
+/// When the type is `Sync + Send` and is used with `Arc`:
+/// ```
+/// #[derive(std::fmt::Debug)]
+/// enum Data {
+///     A, B, C
+/// }
+/// trait Greet {
+///     fn greet(&self);
+/// }
+/// impl Greet for Data {
+///     fn greet(&self) {
+///         println!("Hello");
+///     }
+/// }
+/// castable_to! { Data => [sync] std::fmt::Debug, Greet }
 /// ```
 #[proc_macro]
 pub fn castable_to(input: TokenStream) -> TokenStream {

@@ -1,6 +1,6 @@
 //! A library providing direct casting among trait objects implemented by a type.
 //!
-//! In Rust, an object of a sub-trait of [`std::any::Any`] can be downcast to a concrete type
+//! In Rust, an object of a sub-trait of [`Any`] can be downcast to a concrete type
 //! at runtime if the type is known. But no direct casting between two trait objects
 //! (i.e. without involving the concrete type of the backing value) are possible
 //! (even no coercion from a trait object to that of its super-trait yet).
@@ -45,14 +45,19 @@
 //! * [`#[cast_to(Trait)]`][cast_to] to type definition
 //! * [`castable_to!(Type => Trait1, Trait2)`][castable_to]
 //!
-//! Refer to the documents for each of macros for details.
+//! If the underlying type involved is `Sync + Send` and you want to use it with [`Arc`],
+//! use [`CastFromSync`] in place of [`CastFrom`] and add `[sync]` flag before the list
+//! of traits in the macros. Refer to the documents for each of macros for details.
 //!
 //! For casting, refer to traits defined in [`cast`] module.
 //!
 //! [cast_to]: ./attr.cast_to.html
 //! [castable_to]: ./macro.castable_to.html
+//! [`CastFrom`]: ./trait.CastFrom.html
+//! [`CastFromSync`]: ./trait.CastFromSync.html
 //! [`cast`]: ./cast/index.html
 //! [`Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
+//! [`Arc`]: https://doc.rust-lang.org/std/sync/struct.Arc.html
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::rc::Rc;

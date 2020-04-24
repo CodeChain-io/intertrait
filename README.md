@@ -46,7 +46,7 @@ fn main() {
 
 Target traits must be explicitly designated beforehand. There are three ways of doing it:
 
-## `#[cast_to]` to `impl` item
+### `#[cast_to]` to `impl` item
 The trait implemented is designated as a target trait.
 
 ```rust
@@ -63,7 +63,7 @@ impl Greet for Data {
 }
 ```
 
-## `#[cast_to(Trait)]` to type definition
+### `#[cast_to(Trait)]` to type definition
 For the type, the traits specified as arguments to the `#[cast_to(...)]` attribute are designated as target traits.
 
 ```rust
@@ -82,7 +82,7 @@ impl Greet for Data {
 struct Data;
 ```
 
-## `castable_to!(Type => Trait1, Trait2)`
+### `castable_to!(Type => Trait1, Trait2)`
 For the type, the traits following `:` are designated as target traits.
 
 ```rust
@@ -103,13 +103,21 @@ castable_to!(Data => Greet, std::fmt::Debug);
 fn main() {}
 ```
 
+## `Arc` Support
+`std::sync::Arc` is unique in that it implement `downcast` method only on `dyn Any + Send + Sync + 'static'.
+To use with `Arc`, the following steps should be taken:
+
+* Mark source traits with [`CastFromSync`] instead of [`CastFrom`]
+* Add `[sync]` flag to `#[cast_to]` and `castable_to!` as follows:
+  ```ignore
+  #[cast_to([sync])]
+  #[cast_to([sync] Trait1, Trait2)]
+  castable_to!(Type => [sync] Trait, Trait2);
+  ```
+
 # How it works
 First of all, [`CastFrom`] trait makes it possible to retrieve an object of [`std::any::Any`]
 from an object for a sub-trait of [`CastFrom`]. 
-
-> [`CastFrom`] will become obsolete and be replaced with [`std::any::Any`]
-> once [unsized coercion](https://doc.rust-lang.org/reference/type-coercions.html#unsized-coercions)
-> from a trait object to another trait object for its super-trait is implemented in the stable Rust.
 
 And the macros provided by `intertrait` generates trampoline functions for downcasting a trait object
 for [`std::any::Any`] back to its concrete type and then creating a trait object for the target trait from it.
@@ -144,3 +152,4 @@ dual licensed as above, without any additional terms or conditions.
 [`std::any::Any`]: https://doc.rust-lang.org/std/any/trait.Any.html
 [`TypeId`]: https://doc.rust-lang.org/std/any/struct.TypeId.html
 [`CastFrom`]: https://docs.rs/intertrait/*/intertrait/trait.CastFrom.html
+[`CastFromSync`]: https://docs.rs/intertrait/*/intertrait/trait.CastFromSync.html

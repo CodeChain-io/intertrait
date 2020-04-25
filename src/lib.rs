@@ -2,7 +2,7 @@
 //!
 //! In Rust, an object of a sub-trait of [`Any`] can be downcast to a concrete type
 //! at runtime if the type is known. But no direct casting between two trait objects
-//! (i.e. without involving the concrete type of the backing value) are possible
+//! (i.e. without involving the concrete type of the backing value) is possible
 //! (even no coercion from a trait object to that of its super-trait yet).
 //!
 //! With this crate, any trait object with [`CastFrom`] as its super-trait can be cast directly

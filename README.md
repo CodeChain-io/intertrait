@@ -8,7 +8,7 @@ This library provides direct casting among trait objects implemented by a type.
 
 In Rust, a trait object for a sub-trait of [`std::any::Any`] can be downcast to a concrete type at runtime
 if the type is known. But no direct casting between two trait objects (i.e. without involving the concrete type
-of the backing value) are possible (even no coercion from a trait object for a trait to that for its super-trait yet).
+of the backing value) is possible (even no coercion from a trait object for a trait to that for its super-trait yet).
 
 With this crate, any trait object for a sub-trait of [`CastFrom`] can be cast directly to a trait object
 for another trait implemented by the underlying type if the target traits are registered beforehand

@@ -104,7 +104,7 @@ fn main() {}
 ```
 
 ## `Arc` Support
-`std::sync::Arc` is unique in that it implement `downcast` method only on `dyn Any + Send + Sync + 'static'.
+`std::sync::Arc` is unique in that it implements `downcast` method only on `dyn Any + Send + Sync + 'static'.
 To use with `Arc`, the following steps should be taken:
 
 * Mark source traits with [`CastFromSync`] instead of [`CastFrom`]

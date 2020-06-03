@@ -31,12 +31,10 @@
 //!
 //! impl Source for Data {}
 //!
-//! fn main() {
-//!     let data = Data;
-//!     let source: &dyn Source = &data;
-//!     let greet = source.cast::<dyn Greet>();
-//!     greet.unwrap().greet();
-//! }
+//! let data = Data;
+//! let source: &dyn Source = &data;
+//! let greet = source.cast::<dyn Greet>();
+//! greet.unwrap().greet();
 //! ```
 //!
 //! Target traits must be explicitly designated beforehand. There are three ways to do it:

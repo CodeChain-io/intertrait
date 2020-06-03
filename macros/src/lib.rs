@@ -23,6 +23,8 @@ mod item_type;
 /// # Examples
 /// ## On a trait impl
 /// ```
+/// use intertrait::*;
+///
 /// struct Data;
 ///
 /// trait Greet {
@@ -41,6 +43,8 @@ mod item_type;
 /// ## On a type definition
 /// Use when a target trait is derived or implemented in an external crate.
 /// ```
+/// use intertrait::*;
+///
 /// // Debug can be cast into from any sub-trait of CastFrom implemented by Data
 /// #[cast_to(std::fmt::Debug)]
 /// #[derive(std::fmt::Debug)]
@@ -50,6 +54,8 @@ mod item_type;
 /// ## For Arc
 /// Use when the underlying type is `Sync + Send` and you want to use `Arc`.
 /// ```
+/// use intertrait::*;
+///
 /// // Debug can be cast into from any sub-trait of CastFrom implemented by Data
 /// #[cast_to([sync] std::fmt::Debug)]
 /// #[derive(std::fmt::Debug)]
@@ -82,6 +88,8 @@ pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
 ///
 /// # Examples
 /// ```
+/// use intertrait::*;
+///
 /// #[derive(std::fmt::Debug)]
 /// enum Data {
 ///     A, B, C
@@ -94,11 +102,16 @@ pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
 ///         println!("Hello");
 ///     }
 /// }
+///
 /// castable_to! { Data => std::fmt::Debug, Greet }
+///
+/// # fn main() {}
 /// ```
 ///
 /// When the type is `Sync + Send` and is used with `Arc`:
 /// ```
+/// use intertrait::*;
+///
 /// #[derive(std::fmt::Debug)]
 /// enum Data {
 ///     A, B, C
@@ -112,6 +125,8 @@ pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// castable_to! { Data => [sync] std::fmt::Debug, Greet }
+///
+/// # fn main() {}
 /// ```
 #[proc_macro]
 pub fn castable_to(input: TokenStream) -> TokenStream {

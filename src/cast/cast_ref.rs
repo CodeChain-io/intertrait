@@ -54,7 +54,7 @@ use crate::{caster, CastFrom, Caster, CASTER_MAP};
 /// ```
 pub trait CastRef {
     /// Casts a reference to this trait into that of type `T`.
-    fn cast<'a, T: ?Sized + 'static>(&self) -> Option<&T>;
+    fn cast<T: ?Sized + 'static>(&self) -> Option<&T>;
 
     /// Tests if this trait object can be cast into `T`.
     fn impls<T: ?Sized + 'static>(&self) -> bool;

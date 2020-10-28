@@ -83,8 +83,9 @@ pub fn cast_to(args: TokenStream, input: TokenStream) -> TokenStream {
 /// This macro is for registering both a concrete type and its traits to be targets for casting.
 /// Useful when the type definition and the trait implementations are in an external crate.
 ///
-/// **Note**: this macro cannot be used in an expression or statement due to
-/// [the current limitation](https://github.com/rust-lang/rust/pull/68717) in the stable Rust.
+/// **Note**: this macro cannot be used in an expression or statement prior to Rust 1.45.0,
+/// due to [a previous limitation](https://github.com/rust-lang/rust/pull/68717).
+/// If you want to use it in an expression or statement, use Rust 1.45.0 or later.
 ///
 /// # Examples
 /// ```

@@ -14,7 +14,7 @@ pub fn generate_caster(ty: &impl ToTokens, trait_: &Path, sync: bool) -> TokenSt
     let fn_ident = format_ident!("{}", new_fn_name(&mut fn_buf));
     let new_caster = if sync {
         quote! {
-            intertrait::Caster::<dyn #trait_>::new_sync(
+            ::intertrait::Caster::<dyn #trait_>::new_sync(
                 |from| from.downcast_ref::<#ty>().unwrap(),
                 |from| from.downcast_mut::<#ty>().unwrap(),
                 |from| from.downcast::<#ty>().unwrap(),
@@ -24,7 +24,7 @@ pub fn generate_caster(ty: &impl ToTokens, trait_: &Path, sync: bool) -> TokenSt
         }
     } else {
         quote! {
-            intertrait::Caster::<dyn #trait_>::new(
+            ::intertrait::Caster::<dyn #trait_>::new(
                 |from| from.downcast_ref::<#ty>().unwrap(),
                 |from| from.downcast_mut::<#ty>().unwrap(),
                 |from| from.downcast::<#ty>().unwrap(),
@@ -34,9 +34,9 @@ pub fn generate_caster(ty: &impl ToTokens, trait_: &Path, sync: bool) -> TokenSt
     };
 
     quote! {
-        #[linkme::distributed_slice(intertrait::CASTERS)]
-        fn #fn_ident() -> (std::any::TypeId, intertrait::BoxedCaster) {
-            (std::any::TypeId::of::<#ty>(), Box::new(#new_caster))
+        #[::linkme::distributed_slice(::intertrait::CASTERS)]
+        fn #fn_ident() -> (::std::any::TypeId, ::intertrait::BoxedCaster) {
+            (::std::any::TypeId::of::<#ty>(), Box::new(#new_caster))
         }
     }
 }

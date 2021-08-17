@@ -6,6 +6,7 @@ license = "MIT OR Apache-2.0"
 description = "Allow for inter-trait casting"
 edition = "2018"
 repository = "https://github.com/CodeChain-io/intertrait"
+documentation = "https://docs.rs/intertrait"
 readme = "README.md"
 categories = ["rust-patterns"]
 keywords = ["trait", "cast", "any"]

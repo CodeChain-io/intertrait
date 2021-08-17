@@ -43,7 +43,7 @@ pub fn process(flags: &HashSet<Flag>, input: ItemImpl) -> TokenStream {
     }
 }
 
-fn fully_bound_trait(path: &Path, items: &Vec<ImplItem>) -> impl ToTokens {
+fn fully_bound_trait(path: &Path, items: &[ImplItem]) -> impl ToTokens {
     let bindings = items
         .iter()
         .filter_map(|item| {

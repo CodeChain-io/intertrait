@@ -15,7 +15,7 @@ proc-macro = true
 proc-macro2 = "1.0"
 syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
-uuid = { version = "0.8.1", features = ["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
 
 [dev-dependencies]
 intertrait = { version = "=0.2.1", path = ".." }

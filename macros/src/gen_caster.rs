@@ -1,7 +1,6 @@
 use std::str::from_utf8_unchecked;
 
 use proc_macro2::TokenStream;
-use syn::Path;
 use uuid::adapter::Simple;
 use uuid::Uuid;
 
@@ -9,7 +8,7 @@ use quote::format_ident;
 use quote::quote;
 use quote::ToTokens;
 
-pub fn generate_caster(ty: &impl ToTokens, trait_: &Path, sync: bool) -> TokenStream {
+pub fn generate_caster(ty: &impl ToTokens, trait_: &impl ToTokens, sync: bool) -> TokenStream {
     let mut fn_buf = [0u8; FN_BUF_LEN];
     let fn_ident = format_ident!("{}", new_fn_name(&mut fn_buf));
     let new_caster = if sync {

@@ -6,6 +6,7 @@ authors = ["CodeChain Team <hi@codechain.io>"]
 license = "MIT OR Apache-2.0"
 edition = "2018"
 repository = "https://github.com/CodeChain-io/intertrait"
+documentation = "https://docs.rs/intertrait"
 include = ["src/**/*", "Cargo.toml", "LICENSE-*"]
 
 [lib]

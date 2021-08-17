@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
-use intertrait::*;
 use intertrait::cast::*;
+use intertrait::*;
 
 struct Data;
 
@@ -30,6 +30,9 @@ impl Source for Data {}
 fn test_cast_to_on_trait_impl_with_assoc_type3() {
     let data = Data;
     let source: &dyn Source = &data;
-    let concat = source.cast::<dyn Concat<String, I1=i32, I2=&'static str>>();
-    assert_eq!(concat.unwrap().concat("Data".to_owned(), 101, "hello"), "Data: 101 - hello");
+    let concat = source.cast::<dyn Concat<String, I1 = i32, I2 = &'static str>>();
+    assert_eq!(
+        concat.unwrap().concat("Data".to_owned(), 101, "hello"),
+        "Data: 101 - hello"
+    );
 }

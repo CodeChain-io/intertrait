@@ -1,7 +1,7 @@
 use std::str::from_utf8_unchecked;
 
 use proc_macro2::TokenStream;
-use uuid::adapter::Simple;
+use uuid::fmt::Simple;
 use uuid::Uuid;
 
 use quote::format_ident;
@@ -46,7 +46,7 @@ const FN_BUF_LEN: usize = FN_PREFIX.len() + Simple::LENGTH;
 fn new_fn_name(buf: &mut [u8]) -> &str {
     buf[..FN_PREFIX.len()].copy_from_slice(FN_PREFIX);
     Uuid::new_v4()
-        .to_simple()
+        .as_simple()
         .encode_lower(&mut buf[FN_PREFIX.len()..]);
     unsafe { from_utf8_unchecked(&buf[..FN_BUF_LEN]) }
 }

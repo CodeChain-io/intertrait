@@ -61,7 +61,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use linkme::distributed_slice;
+// re-export linkme
+pub use linkme;
 use once_cell::sync::Lazy;
 
 pub use intertrait_macros::*;
@@ -84,7 +85,7 @@ doc_comment::doctest!("../README.md");
 ///
 /// [`Caster<T>`]: ./struct.Caster.html
 #[doc(hidden)]
-#[distributed_slice]
+#[linkme::distributed_slice]
 pub static CASTERS: [fn() -> (TypeId, BoxedCaster)] = [..];
 
 /// A `HashMap` mapping `TypeId` of a [`Caster<T>`] to an instance of it.
@@ -287,14 +288,12 @@ mod tests {
     use std::any::{Any, TypeId};
     use std::fmt::{Debug, Display};
 
-    use linkme::distributed_slice;
-
     use crate::{BoxedCaster, CastFromSync};
 
     use super::cast::*;
     use super::*;
 
-    #[distributed_slice(super::CASTERS)]
+    #[linkme::distributed_slice(super::CASTERS)]
     static TEST_CASTER: fn() -> (TypeId, BoxedCaster) = create_test_caster;
 
     #[derive(Debug)]

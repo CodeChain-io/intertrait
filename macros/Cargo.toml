@@ -19,4 +19,3 @@ uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 intertrait = { version = "=0.2.2", path = ".." }
-linkme = "0.3"

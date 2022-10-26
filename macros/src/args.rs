@@ -62,16 +62,26 @@ impl Parse for Targets {
 pub struct Casts {
     pub ty: Type,
     pub targets: Targets,
+    pub intertrait_path: Path,
 }
 
 impl Parse for Casts {
     fn parse(input: ParseStream) -> Result<Self> {
+        let intertrait_path = if input.peek(Token![@]) {
+            input.parse::<Token![@]>()?;
+            input.parse()?
+        } else {
+            syn::parse(quote::quote!(::intertrait).into())?
+        };
+
         let ty: Type = input.parse()?;
         input.parse::<Token![=>]>()?;
+        let targets: Targets = input.parse()?;
 
         Ok(Casts {
             ty,
-            targets: input.parse()?,
+            targets,
+            intertrait_path,
         })
     }
 }

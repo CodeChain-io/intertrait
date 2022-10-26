@@ -4,7 +4,7 @@ description = "Macros for intertrait crate, which allows for direct casting betw
 version = "0.2.2"
 authors = ["CodeChain Team <hi@codechain.io>"]
 license = "MIT OR Apache-2.0"
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/CodeChain-io/intertrait"
 include = ["src/**/*", "Cargo.toml", "LICENSE-*"]
 
@@ -15,8 +15,7 @@ proc-macro = true
 proc-macro2 = "1.0"
 syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 intertrait = { version = "=0.2.2", path = ".." }
-linkme = "0.2"

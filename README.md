@@ -20,7 +20,6 @@ Add the following two dependencies to your `Cargo.toml`:
 ```toml
 [dependencies]
 intertrait = "0.2"
-linkme = "0.2"
 ```
 
 The `linkme` dependency is required due to the use of `linkme` macro in the output of `intertrait` macros.
@@ -129,7 +128,7 @@ To use with `Arc`, the following steps should be taken:
 
 # How it works
 First of all, [`CastFrom`] trait makes it possible to retrieve an object of [`std::any::Any`]
-from an object for a sub-trait of [`CastFrom`]. 
+from an object for a sub-trait of [`CastFrom`].
 
 And the macros provided by `intertrait` generates trampoline functions for downcasting a trait object
 for [`std::any::Any`] back to its concrete type and then creating a trait object for the target trait from it.

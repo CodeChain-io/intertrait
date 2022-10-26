@@ -8,12 +8,19 @@ use quote::format_ident;
 use quote::quote;
 use quote::ToTokens;
 
-pub fn generate_caster(ty: &impl ToTokens, trait_: &impl ToTokens, sync: bool) -> TokenStream {
+use syn::Path;
+
+pub fn generate_caster(
+    ty: &impl ToTokens,
+    trait_: &impl ToTokens,
+    sync: bool,
+    intertrait_path: &Path,
+) -> TokenStream {
     let mut fn_buf = [0u8; FN_BUF_LEN];
     let fn_ident = format_ident!("{}", new_fn_name(&mut fn_buf));
     let new_caster = if sync {
         quote! {
-            ::intertrait::Caster::<dyn #trait_>::new_sync(
+            #intertrait_path::Caster::<dyn #trait_>::new_sync(
                 |from| from.downcast_ref::<#ty>().unwrap(),
                 |from| from.downcast_mut::<#ty>().unwrap(),
                 |from| from.downcast::<#ty>().unwrap(),
@@ -23,7 +30,7 @@ pub fn generate_caster(ty: &impl ToTokens, trait_: &impl ToTokens, sync: bool) -
         }
     } else {
         quote! {
-            ::intertrait::Caster::<dyn #trait_>::new(
+            #intertrait_path::Caster::<dyn #trait_>::new(
                 |from| from.downcast_ref::<#ty>().unwrap(),
                 |from| from.downcast_mut::<#ty>().unwrap(),
                 |from| from.downcast::<#ty>().unwrap(),
@@ -33,9 +40,9 @@ pub fn generate_caster(ty: &impl ToTokens, trait_: &impl ToTokens, sync: bool) -
     };
 
     quote! {
-        #[::intertrait::linkme::distributed_slice(::intertrait::CASTERS)]
-        #[linkme(crate = ::intertrait::linkme)]
-        fn #fn_ident() -> (::std::any::TypeId, ::intertrait::BoxedCaster) {
+        #[#intertrait_path::linkme::distributed_slice(#intertrait_path::CASTERS)]
+        #[linkme(crate = #intertrait_path::linkme)]
+        fn #fn_ident() -> (::std::any::TypeId, #intertrait_path::BoxedCaster) {
             (::std::any::TypeId::of::<#ty>(), Box::new(#new_caster))
         }
     }

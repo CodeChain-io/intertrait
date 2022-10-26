@@ -8,6 +8,7 @@ use args::{Casts, Flag, Targets};
 use gen_caster::generate_caster;
 
 mod args;
+mod attr;
 mod gen_caster;
 mod item_impl;
 mod item_type;
@@ -134,11 +135,12 @@ pub fn castable_to(input: TokenStream) -> TokenStream {
     let Casts {
         ty,
         targets: Targets { flags, paths },
+        intertrait_path,
     } = parse_macro_input!(input);
 
     paths
         .iter()
-        .map(|t| generate_caster(&ty, t, flags.contains(&Flag::Sync)))
+        .map(|t| generate_caster(&ty, t, flags.contains(&Flag::Sync), &intertrait_path))
         .collect::<proc_macro2::TokenStream>()
         .into()
 }

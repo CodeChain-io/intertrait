@@ -14,13 +14,16 @@ use PathArguments::AngleBracketed;
 use crate::args::Flag;
 use crate::gen_caster::generate_caster;
 
-pub fn process(flags: &HashSet<Flag>, input: ItemImpl) -> TokenStream {
+pub fn process(flags: &HashSet<Flag>, mut input: ItemImpl) -> TokenStream {
     let ItemImpl {
+        ref mut attrs,
         ref self_ty,
         ref trait_,
         ref items,
         ..
     } = input;
+
+    let intertrait_path = crate::attr::intertrait_path(attrs).unwrap();
 
     let generated = match trait_ {
         None => quote_spanned! {
@@ -32,7 +35,12 @@ pub fn process(flags: &HashSet<Flag>, input: ItemImpl) -> TokenStream {
             },
             (None, path, _) => {
                 let path = fully_bound_trait(path, items);
-                generate_caster(self_ty, &path, flags.contains(&Flag::Sync))
+                generate_caster(
+                    self_ty,
+                    &path,
+                    flags.contains(&Flag::Sync),
+                    &intertrait_path,
+                )
             }
         },
     };
